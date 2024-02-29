@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import partial
 from typing import Any, Callable, NamedTuple
 
 import altair as alt
@@ -26,9 +27,8 @@ Tile = namedtuple("Tile", ["Name", "Query"])
 class Tile(NamedTuple):
     name: str
     query: str
-    render_f: Callable = (
-        st.dataframe
-    )  # NOTE: this might not work if pushed into a Streamlit container
+    # NOTE: this might not work if pushed into a Streamlit container
+    render_f: Callable = partial(st.dataframe, use_container_width=True)
 
     def render(self):
         session = get_active_session()
@@ -42,10 +42,15 @@ def render(tile: Tile) -> Any:
     return tile.render()
 
 
+altair_chart = partial(
+    st.altair_chart, use_container_width=True
+)  # NOTE: theme="streamlit" is default
+
+
 AuthFailures = Tile(
     "Failures, by User and Reason",
     NUM_FAILURES,
-    lambda data: st.altair_chart(
+    lambda data: altair_chart(
         alt.Chart(data)
         .mark_bar()
         .encode(
@@ -53,23 +58,19 @@ AuthFailures = Tile(
             y=alt.Y("NUM_OF_FAILURES", aggregate="sum", title="Login failures"),
             color="ERROR_MESSAGE",
         ),
-        use_container_width=True,
-        theme="streamlit",
     ),
 )
 
 AuthByMethod = Tile(
     "Breakdown by Method",
     AUTH_BY_METHOD,
-    lambda data: st.altair_chart(
+    lambda data: altair_chart(
         alt.Chart(data)
         .mark_bar()
         .encode(
             x=alt.X("COUNT(*)", type="quantitative", title="Event Count"),
             y=alt.Y("AUTHENTICATION_METHOD", type="nominal", title="Method", sort="-x"),
         ),
-        use_container_width=True,
-        theme="streamlit",
     ),
 )
 
@@ -104,13 +105,13 @@ IdentityManagementTiles = (
 MostDangerousPersonTile = Tile(
     "Most Dangerous Person",
     MOST_DANGEROUS_PERSON,
-    lambda data: st.altair_chart(
+    lambda data: altair_chart(
         alt.Chart(data)
         .mark_bar()
         .encode(
             x=alt.X("NUM_OF_PRIVS", type="quantitative", title="Number of privileges"),
             y=alt.Y("USER", type="nominal", title="User", sort="-x"),
-        )
+        ),
     ),
     # TODO
     # grantee_name as user,
@@ -124,7 +125,7 @@ LeastPrivilegedAccesTiles = (MostDangerousPersonTile, MostBloatedRoles)
 PrivilegedObjectChangesByUser = Tile(
     "Privileged object changes by User",
     PRIVILEGED_OBJECT_CHANGES_BY_USER,
-    lambda data: st.altair_chart(
+    lambda data: altair_chart(
         alt.Chart(data)
         .mark_bar()
         .encode(
