@@ -41,3 +41,25 @@ GROUP BY l.user_name, first_authentication_factor, second_authentication_factor
 ORDER BY count(*) desc;
 """
 
+ACCOUNTADMIN_GRANTS = """
+select
+    user_name || ' granted the ' || role_name || ' role on ' || end_time as Description, query_text as Statement
+from
+    query_history
+where
+    execution_status = 'SUCCESS'
+    and query_type = 'GRANT'
+    and query_text ilike '%grant%accountadmin%to%'
+order by
+    end_time desc;
+"""
+
+ACCOUNTADMIN_NO_MFA = """
+select u.name,
+timediff(days, last_success_login, current_timestamp()) || ' days ago' last_login ,
+timediff(days, password_last_set_time,current_timestamp(6)) || ' days ago' password_age
+from users u
+join grants_to_users g on grantee_name = name and role = 'ACCOUNTADMIN' and g.deleted_on is null
+where ext_authn_duo = false and u.deleted_on is null and has_password = true
+order by last_success_login desc;
+"""

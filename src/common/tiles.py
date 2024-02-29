@@ -6,6 +6,8 @@ import streamlit as st
 from snowflake.snowpark.context import get_active_session
 
 from .queries import (
+    ACCOUNTADMIN_GRANTS,
+    ACCOUNTADMIN_NO_MFA,
     AUTH_BY_METHOD,
     AUTH_BYPASSING,
     NUM_FAILURES,
@@ -70,4 +72,10 @@ AuthBypassing = Tile(
 )
 
 AuthTiles = (AuthFailures, AuthByMethod, AuthBypassing)
+
+PrivilegedAccessAccountAdminGrants = Tile("ACCOUNTADMIN Grants", ACCOUNTADMIN_GRANTS)
+
+PrivilegedAccessNoMfa = Tile("ACCOUNTADMINs that do not use MFA", ACCOUNTADMIN_NO_MFA)
+
+PrivilegedAccessTiles = (PrivilegedAccessAccountAdminGrants, PrivilegedAccessNoMfa)
 
