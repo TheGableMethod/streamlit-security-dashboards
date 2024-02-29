@@ -10,6 +10,8 @@ from .queries import (
     ACCOUNTADMIN_NO_MFA,
     AUTH_BY_METHOD,
     AUTH_BYPASSING,
+    MOST_BLOATED_ROLES,
+    MOST_DANGEROUS_PERSON,
     NUM_FAILURES,
     SCIM_TOKEN_LIFECYCLE,
     STALE_USERS,
@@ -95,3 +97,23 @@ IdentityManagementTiles = (
     StaleUsers,
     SCIMTokenLifecycle,
 )
+
+MostDangerousPersonTile = Tile(
+    "Most Dangerous Person",
+    MOST_DANGEROUS_PERSON,
+    lambda data: st.altair_chart(
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X("NUM_OF_PRIVS", type="quantitative", title="Number of privileges"),
+            y=alt.Y("USER", type="nominal", title="User", sort="-x"),
+        )
+    ),
+    # TODO
+    # grantee_name as user,
+    #     count(a.role) num_of_roles,
+    #     sum(num_of_privs) num_of_privs
+)
+
+MostBloatedRoles = Tile("Most Bloated Roles", MOST_BLOATED_ROLES)
+LeastPrivilegedAccesTiles = (MostDangerousPersonTile, MostBloatedRoles)
