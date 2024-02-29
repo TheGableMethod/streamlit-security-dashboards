@@ -12,7 +12,9 @@ from .queries import (
     AUTH_BYPASSING,
     MOST_BLOATED_ROLES,
     MOST_DANGEROUS_PERSON,
+    NETWORK_POLICY_CHANGES,
     NUM_FAILURES,
+    PRIVILEGED_OBJECT_CHANGES_BY_USER,
     SCIM_TOKEN_LIFECYCLE,
     STALE_USERS,
     USERS_BY_OLDEST_PASSWORDS,
@@ -117,3 +119,19 @@ MostDangerousPersonTile = Tile(
 
 MostBloatedRoles = Tile("Most Bloated Roles", MOST_BLOATED_ROLES)
 LeastPrivilegedAccesTiles = (MostDangerousPersonTile, MostBloatedRoles)
+
+PrivilegedObjectChangesByUser = Tile(
+    "Privileged object changes by User",
+    PRIVILEGED_OBJECT_CHANGES_BY_USER,
+    lambda data: st.altair_chart(
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X("USER_NAME", type="nominal", sort="-y", title="User"),
+            y=alt.Y("QUERY_TEXT", aggregate="count", title="Number of Changes"),
+        )
+    ),
+)
+NetworkPolicyChanges = Tile("Network Policy Changes", NETWORK_POLICY_CHANGES)
+
+ConfigurationManagementTiles = (PrivilegedObjectChangesByUser, NetworkPolicyChanges)

@@ -279,3 +279,38 @@ role_path_privs_agg as (
 ) 
 select * from role_path_privs_agg order by num_of_privs desc
 """
+
+PRIVILEGED_OBJECT_CHANGES_BY_USER = """
+SELECT
+    query_text,
+    user_name,
+    role_name,
+    end_time
+  FROM snowflake.account_usage.query_history
+    WHERE execution_status = 'SUCCESS'
+      AND query_type NOT in ('SELECT')
+      AND (query_text ILIKE '%create role%'
+          OR query_text ILIKE '%manage grants%'
+          OR query_text ILIKE '%create integration%'
+          OR query_text ILIKE '%create share%'
+          OR query_text ILIKE '%create account%'
+          OR query_text ILIKE '%monitor usage%'
+          OR query_text ILIKE '%ownership%'
+          OR query_text ILIKE '%drop table%'
+          OR query_text ILIKE '%drop database%'
+          OR query_text ILIKE '%create stage%'
+          OR query_text ILIKE '%drop stage%'
+          OR query_text ILIKE '%alter stage%'
+          )
+  ORDER BY end_time desc;
+"""
+
+NETWORK_POLICY_CHANGES = """
+select user_name || ' made the following Network Policy change on ' || end_time || ' [' ||  query_text || ']' as Events
+   from query_history where execution_status = 'SUCCESS'
+   and query_type in ('CREATE_NETWORK_POLICY', 'ALTER_NETWORK_POLICY', 'DROP_NETWORK_POLICY')
+   or (query_text ilike '% set network_policy%' or
+       query_text ilike '% unset network_policy%')
+       and query_type != 'SELECT' and query_type != 'UNKNOWN'
+   order by end_time desc;
+"""
