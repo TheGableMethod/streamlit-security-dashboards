@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "streamlit-security-dashboards"
+version = "0.1.0"
+description = ""
+authors = ["Vladimir Timofeenko <vladimir.timofeenko@snowflake.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.8"
+streamlit = "1.22.0"
+snowflake-snowpark-python = "1.12.0"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+black = "^24.2.0"
+ruff = "^0.3.0"
+watchdog = "^4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+known_first_party = "poetry"
+
+[tool.black]
+# Debatable, but on modern displays is OK
+# Making explicit in the config file
+line-length = 120
+
