@@ -32,7 +32,8 @@ class Tile(NamedTuple):
 
     def render(self):
         session = get_active_session()
-        data = session.sql(self.query).to_pandas()
+        with st.spinner("Fetching data..."):
+            data = session.sql(self.query).to_pandas()
         self.render_f(data)
 
 
