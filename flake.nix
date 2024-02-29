@@ -122,7 +122,7 @@
               {
                 help = "Run local Streamlit";
                 name = "local-streamlit";
-                command = "poetry run streamlit run src/streamlit_app.py";
+                command = "poetry run streamlit run src/authentication.py";
               }
               {
                 help = "Deploy Streamlit to the test account";
