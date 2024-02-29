@@ -11,6 +11,9 @@ from .queries import (
     AUTH_BY_METHOD,
     AUTH_BYPASSING,
     NUM_FAILURES,
+    SCIM_TOKEN_LIFECYCLE,
+    STALE_USERS,
+    USERS_BY_OLDEST_PASSWORDS,
 )
 
 Tile = namedtuple("Tile", ["Name", "Query"])
@@ -79,3 +82,16 @@ PrivilegedAccessNoMfa = Tile("ACCOUNTADMINs that do not use MFA", ACCOUNTADMIN_N
 
 PrivilegedAccessTiles = (PrivilegedAccessAccountAdminGrants, PrivilegedAccessNoMfa)
 
+IdentityUsersByOldestPasswords = Tile(
+    "Users by oldest Passwords", USERS_BY_OLDEST_PASSWORDS
+)
+
+StaleUsers = Tile("Stale users", STALE_USERS)
+
+SCIMTokenLifecycle = Tile("SCIM Token Lifecycle", SCIM_TOKEN_LIFECYCLE)
+
+IdentityManagementTiles = (
+    IdentityUsersByOldestPasswords,
+    StaleUsers,
+    SCIMTokenLifecycle,
+)

@@ -63,3 +63,36 @@ join grants_to_users g on grantee_name = name and role = 'ACCOUNTADMIN' and g.de
 where ext_authn_duo = false and u.deleted_on is null and has_password = true
 order by last_success_login desc;
 """
+
+USERS_BY_OLDEST_PASSWORDS = """
+select name, datediff('day', password_last_set_time, current_timestamp()) || ' days ago' as password_last_changed from users
+where deleted_on is null and
+password_last_set_time is not null
+order by password_last_set_time;
+"""
+
+STALE_USERS = """
+select name, datediff("day", nvl(last_success_login, created_on), current_timestamp()) || ' days ago' Last_Login from users
+where deleted_on is null
+order by datediff("day", nvl(last_success_login, created_on), current_timestamp()) desc;
+"""
+
+SCIM_TOKEN_LIFECYCLE = """
+select
+    user_name as by_whom,
+    datediff('day', start_time, current_timestamp()) || ' days ago' as created_on,
+    ADD_MONTHS(start_time, 6) as expires_on,
+    datediff(
+        'day',
+        current_timestamp(),
+        ADD_MONTHS(end_time, 6)
+    ) as expires_in_days
+from
+    query_history
+where
+    execution_status = 'SUCCESS'
+    and query_text ilike 'select%SYSTEM$GENERATE_SCIM_ACCESS_TOKEN%'
+    and query_text not ilike 'select%where%SYSTEM$GENERATE_SCIM_ACCESS_TOKEN%'
+order by
+    expires_in_days;
+"""
