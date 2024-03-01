@@ -7,4 +7,6 @@ streamlit:
   env_file: environment.yml
   pages_dir: pages/
   additional_source_files:
-    - common/hello.py
+    - common/queries.py
+    - common/tiles.py
+    - common/utils.py
