@@ -3,7 +3,7 @@ streamlit:
   name: Sentry
   stage: my_streamlit_stage
   query_warehouse: ADHOC
-  main_file: authentication.py
+  main_file: Authentication.py
   env_file: environment.yml
   pages_dir: pages/
   additional_source_files:
