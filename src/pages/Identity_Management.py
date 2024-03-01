@@ -1,3 +1,5 @@
+"""Contains tiles reporting on Identity Management."""
+
 from toolz import pipe
 from toolz.curried import map
 

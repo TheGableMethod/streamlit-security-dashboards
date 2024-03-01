@@ -1,3 +1,7 @@
+"""Contains implementation and definitions of Tiles -- the main helper object of this app.
+
+Tiles are self-contained objects that combine the query to fetch the data with the method of rendering a tile on the page.
+"""
 from collections import namedtuple
 from functools import partial
 from typing import Any, Callable, NamedTuple
@@ -25,12 +29,15 @@ Tile = namedtuple("Tile", ["Name", "Query"])
 
 
 class Tile(NamedTuple):
+    """Composable object to retrieve data from Snowflake and render it on a page."""
+
     name: str
     query: str
     # NOTE: this might not work if pushed into a Streamlit container
     render_f: Callable = partial(st.dataframe, use_container_width=True)
 
     def render(self):
+        """Produce a Tile's representation on the page."""
         session = get_active_session()
         with st.spinner("Fetching data..."):
             data = session.sql(self.query).to_pandas()

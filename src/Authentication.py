@@ -1,3 +1,5 @@
+"""Main entrypoint. Contains tiles reporting on Authentication."""
+
 from toolz import pipe
 from toolz.curried import map
 

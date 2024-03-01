@@ -1,3 +1,5 @@
+"""Contains tiles reporting on Privileged Access."""
+
 from toolz import pipe
 from toolz.curried import map
 

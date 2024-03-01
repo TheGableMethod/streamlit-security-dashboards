@@ -1,3 +1,5 @@
+"""Contains tiles reporting on Configuration Management."""
+
 from toolz import pipe
 from toolz.curried import map
 
