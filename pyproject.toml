@@ -31,7 +31,15 @@ known_first_party = "poetry"
 line-length = 120
 
 [tool.ruff.lint]
-select = ["TID"]
+select = [
+  "A", # flake builtins
+  "D", # docstyle, very angry
+  "N", # pep8-naming
+  "TID", # for banned inputs
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "streamlit.file_uploader".msg = "This feature is not supported in Streamlit in Snowflake"
