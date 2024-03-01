@@ -103,6 +103,7 @@
               deadnix.enable = true;
               statix.enable = true;
               markdownlint.enable = true;
+              ruff.enable = true;
             };
             settings = {
               deadnix.edit = true;
