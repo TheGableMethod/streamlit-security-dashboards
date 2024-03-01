@@ -64,12 +64,14 @@
             ''
               ${pkgs.lib.getExe inputs'.snowcli.packages.snowcli-2x} --config-file <(cat<<EOF
               [connections]
-              [connections.dev] # DEFAULT connection name is this
+              [connections.default]
               account = "$SNOWFLAKE_ACCOUNT"
               user = "$SNOWFLAKE_USER"
-              database = "$SNOWFLAKE_DB"
-              schema = "$SNOWFLAKE_SCHEMA"
               password = "$SNOWFLAKE_PASSWORD"
+              database = "$SNOWFLAKE_DATABASE"
+              schema = "$SNOWFLAKE_SCHEMA"
+              warehouse = "$SNOWFLAKE_WAREHOUSE"
+              role = "$SNOWFLAKE_ROLE"
               EOF
               ) $@'';
         in
