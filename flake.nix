@@ -71,7 +71,7 @@
               schema = "$SNOWFLAKE_SCHEMA"
               password = "$SNOWFLAKE_PASSWORD"
               EOF
-              )'';
+              ) $@'';
         in
         {
           # Development configuration
