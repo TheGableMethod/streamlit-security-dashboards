@@ -38,6 +38,7 @@ class Tile(NamedTuple):
 
     def render(self):
         """Produce a Tile's representation on the page."""
+        st.subheader(self.name)
         session = get_active_session()
         with st.spinner("Fetching data..."):
             data = session.sql(self.query).to_pandas()
@@ -45,7 +46,7 @@ class Tile(NamedTuple):
 
 
 def render(tile: Tile) -> Any:
-    st.subheader(tile.name)
+    """Call Tile.render in a functional way."""
     return tile.render()
 
 
