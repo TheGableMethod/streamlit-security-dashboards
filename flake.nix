@@ -104,6 +104,8 @@
               EOF
 
               snow streamlit deploy --replace
+              # Grant the usage on the created Streamlit to the designated admin role
+              snow sql --query "GRANT USAGE ON STREAMLIT $SNOWFLAKE_DATABASE.$SNOWFLKAE_SCHEMA.SENTRY TO ROLE $SIS_GRANT_TO_ROLE"
             '';
           };
 
