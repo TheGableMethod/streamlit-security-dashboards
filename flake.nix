@@ -76,6 +76,37 @@
               ) $@'';
         in
         {
+          apps.deploy-streamlit-in-snowflake.program = pkgs.writeShellApplication {
+            name = "deploy-streamlit-in-snowflake";
+            runtimeInputs = [ snowCli ];
+            text = ''
+              function exit_trap(){
+                popd
+                popd
+              }
+              trap exit_trap EXIT # go back to original dir regardless of the exit codes
+
+              PRJ_ROOT=$(git rev-parse --show-toplevel)
+
+              TARGET="$PRJ_ROOT/target"
+
+              pushd "$PRJ_ROOT" # cd to project root directory
+
+              rm -rf "$TARGET"
+              cp -rf src "$TARGET"
+              pushd "$TARGET"/
+
+              # Create deploy-only config for the query warehouse
+              cat >snowflake.local.yml <<EOF
+              definition_version: 1
+              streamlit:
+                query_warehouse: $SIS_QUERY_WAREHOUSE
+              EOF
+
+              snow streamlit deploy --replace
+            '';
+          };
+
           # Development configuration
           treefmt = {
             programs = {
@@ -129,8 +160,8 @@
               }
               {
                 help = "Deploy Streamlit to the test account";
-                name = "deploy-streamlit";
-                command = "${getExe snowCli}";
+                name = "deploy-streamlit-in-snowflake";
+                command = "nix run .#deploy-streamlit-in-snowflake";
               }
             ];
             packages = builtins.attrValues { inherit (pkgs) jc jq; } ++ [ snowCli ];
