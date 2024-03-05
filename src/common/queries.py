@@ -1,12 +1,14 @@
 """Module with queries to be run in the app."""
 
-NUM_FAILURES = """
+_SCHEMA = "SNOWFLAKE.ACCOUNT_USAGE"
+
+NUM_FAILURES = f"""
 select
     user_name,
     error_message,
     count(*) num_of_failures
 from
-    login_history
+    {_SCHEMA}.login_history
 where
     is_success = 'NO'
 group by
@@ -16,36 +18,36 @@ order by
     num_of_failures desc;
 """
 
-AUTH_BY_METHOD = """
+AUTH_BY_METHOD = f"""
 select
    first_authentication_factor || ' ' ||nvl(second_authentication_factor, '') as authentication_method
    , count(*)
-    from login_history
+    from {_SCHEMA}.login_history
     where is_success = 'YES'
     and user_name != 'WORKSHEETS_APP_USER'
     group by authentication_method
     order by count(*) desc;
 """
 
-AUTH_BYPASSING = """
+AUTH_BYPASSING = f"""
 SELECT
  l.user_name,
  first_authentication_factor,
  second_authentication_factor,
  count(*) as Num_of_events
-FROM snowflake.account_usage.login_history as l
-JOIN snowflake.account_usage.users u on l.user_name = u.name and l.user_name ilike '%svc' and has_rsa_public_key = 'true'
+FROM {_SCHEMA}.login_history as l
+JOIN {_SCHEMA}.users u on l.user_name = u.name and l.user_name ilike '%svc' and has_rsa_public_key = 'true'
 WHERE is_success = 'YES'
 AND first_authentication_factor != 'RSA_KEYPAIR'
 GROUP BY l.user_name, first_authentication_factor, second_authentication_factor
 ORDER BY count(*) desc;
 """
 
-ACCOUNTADMIN_GRANTS = """
+ACCOUNTADMIN_GRANTS = f"""
 select
     user_name || ' granted the ' || role_name || ' role on ' || end_time as Description, query_text as Statement
 from
-    query_history
+    {_SCHEMA}.query_history
 where
     execution_status = 'SUCCESS'
     and query_type = 'GRANT'
@@ -54,30 +56,30 @@ order by
     end_time desc;
 """
 
-ACCOUNTADMIN_NO_MFA = """
+ACCOUNTADMIN_NO_MFA = f"""
 select u.name,
 timediff(days, last_success_login, current_timestamp()) || ' days ago' last_login ,
 timediff(days, password_last_set_time,current_timestamp(6)) || ' days ago' password_age
-from users u
-join grants_to_users g on grantee_name = name and role = 'ACCOUNTADMIN' and g.deleted_on is null
+from {_SCHEMA}.users u
+join {_SCHEMA}.grants_to_users g on grantee_name = name and role = 'ACCOUNTADMIN' and g.deleted_on is null
 where ext_authn_duo = false and u.deleted_on is null and has_password = true
 order by last_success_login desc;
 """
 
-USERS_BY_OLDEST_PASSWORDS = """
-select name, datediff('day', password_last_set_time, current_timestamp()) || ' days ago' as password_last_changed from users
+USERS_BY_OLDEST_PASSWORDS = f"""
+select name, datediff('day', password_last_set_time, current_timestamp()) || ' days ago' as password_last_changed from {_SCHEMA}.users
 where deleted_on is null and
 password_last_set_time is not null
 order by password_last_set_time;
 """
 
-STALE_USERS = """
-select name, datediff("day", nvl(last_success_login, created_on), current_timestamp()) || ' days ago' Last_Login from users
+STALE_USERS = f"""
+select name, datediff("day", nvl(last_success_login, created_on), current_timestamp()) || ' days ago' Last_Login from {_SCHEMA}.users
 where deleted_on is null
 order by datediff("day", nvl(last_success_login, created_on), current_timestamp()) desc;
 """
 
-SCIM_TOKEN_LIFECYCLE = """
+SCIM_TOKEN_LIFECYCLE = f"""
 select
     user_name as by_whom,
     datediff('day', start_time, current_timestamp()) || ' days ago' as created_on,
@@ -88,7 +90,7 @@ select
         ADD_MONTHS(end_time, 6)
     ) as expires_in_days
 from
-    query_history
+    {_SCHEMA}.query_history
 where
     execution_status = 'SUCCESS'
     and query_text ilike 'select%SYSTEM$GENERATE_SCIM_ACCESS_TOKEN%'
@@ -97,14 +99,14 @@ order by
     expires_in_days;
 """
 
-MOST_DANGEROUS_PERSON = """
+MOST_DANGEROUS_PERSON = f"""
 with role_hier as (
     --Extract all Roles
     select
         grantee_name,
         name
     from
-        grants_to_roles
+        {_SCHEMA}.grants_to_roles
     where
         granted_on = 'ROLE'
         and privilege = 'USAGE'
@@ -115,14 +117,14 @@ with role_hier as (
         'root',
         r.name
     from
-        roles r
+        {_SCHEMA}.roles r
     where
         deleted_on is null
         and not exists (
             select
                 1
             from
-                grants_to_roles gtr
+                {_SCHEMA}.grants_to_roles gtr
             where
                 gtr.granted_on = 'ROLE'
                 and gtr.privilege = 'USAGE'
@@ -161,7 +163,7 @@ role_path_privs as (
         'Role ' || path || ' has ' || privilege || ' on ' || granted_on || ' ' || privs.name as Description
     from
         role_path rp
-        left join grants_to_roles privs on rp.name = privs.grantee_name
+        left join {_SCHEMA}.grants_to_roles privs on rp.name = privs.grantee_name
         and privs.granted_on != 'ROLE'
         and deleted_on is null
     order by
@@ -184,7 +186,7 @@ select
     count(a.role) num_of_roles,
     sum(num_of_privs) num_of_privs
 from
-    grants_to_users u
+    {_SCHEMA}.grants_to_users u
     join role_path_privs_agg a on a.role = u.role
 where
     u.deleted_on is null
@@ -194,7 +196,7 @@ order by
     num_of_privs desc;
 """
 
-MOST_BLOATED_ROLES = """
+MOST_BLOATED_ROLES = f"""
 --Role Hierarchy
 with role_hier as (
     --Extract all Roles
@@ -202,7 +204,7 @@ with role_hier as (
         grantee_name,
         name
     from
-        grants_to_roles
+        {_SCHEMA}.grants_to_roles
     where
         granted_on = 'ROLE'
         and privilege = 'USAGE'
@@ -213,14 +215,14 @@ with role_hier as (
         'root',
         r.name
     from
-        roles r
+        {_SCHEMA}.roles r
     where
         deleted_on is null
         and not exists (
             select
                 1
             from
-                grants_to_roles gtr
+                {_SCHEMA}.grants_to_roles gtr
             where
                 gtr.granted_on = 'ROLE'
                 and gtr.privilege = 'USAGE'
@@ -259,7 +261,7 @@ role_path_privs as (
         'Role ' || path || ' has ' || privilege || ' on ' || granted_on || ' ' || privs.name as Description
     from
         role_path rp
-        left join grants_to_roles privs on rp.name = privs.grantee_name
+        left join {_SCHEMA}.grants_to_roles privs on rp.name = privs.grantee_name
         and privs.granted_on != 'ROLE'
         and deleted_on is null
     order by
@@ -276,17 +278,17 @@ role_path_privs_agg as (
         trim(split(path, ' -> ') [0])
     order by
         count(*) desc
-) 
+)
 select * from role_path_privs_agg order by num_of_privs desc
 """
 
-PRIVILEGED_OBJECT_CHANGES_BY_USER = """
+PRIVILEGED_OBJECT_CHANGES_BY_USER = f"""
 SELECT
     query_text,
     user_name,
     role_name,
     end_time
-  FROM snowflake.account_usage.query_history
+  FROM {_SCHEMA}.query_history
     WHERE execution_status = 'SUCCESS'
       AND query_type NOT in ('SELECT')
       AND (query_text ILIKE '%create role%'
@@ -305,9 +307,9 @@ SELECT
   ORDER BY end_time desc;
 """
 
-NETWORK_POLICY_CHANGES = """
+NETWORK_POLICY_CHANGES = f"""
 select user_name || ' made the following Network Policy change on ' || end_time || ' [' ||  query_text || ']' as Events
-   from query_history where execution_status = 'SUCCESS'
+   from {_SCHEMA}.query_history where execution_status = 'SUCCESS'
    and query_type in ('CREATE_NETWORK_POLICY', 'ALTER_NETWORK_POLICY', 'DROP_NETWORK_POLICY')
    or (query_text ilike '% set network_policy%' or
        query_text ilike '% unset network_policy%')
