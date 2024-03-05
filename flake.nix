@@ -103,9 +103,18 @@
                 query_warehouse: $SIS_QUERY_WAREHOUSE
               EOF
 
+              # Deploy the application
+              # NOTE: the CI variable check prevents the account name from being printed by suppressing all output
+              CI=true
+              if [ -n "''${CI+x}" ]; then
+                  exec &>/dev/null
+              fi
               snow streamlit deploy --replace
+
               # Grant the usage on the created Streamlit to the designated admin role
-              snow sql --query "GRANT USAGE ON STREAMLIT $SNOWFLAKE_DATABASE.$SNOWFLKAE_SCHEMA.SENTRY TO ROLE $SIS_GRANT_TO_ROLE"
+              cat <<EOF | snow sql -i
+              GRANT USAGE ON STREAMLIT $SNOWFLAKE_DATABASE.$SNOWFLAKE_SCHEMA.SENTRY TO ROLE $SIS_GRANT_TO_ROLE;
+              EOF
             '';
           };
 
