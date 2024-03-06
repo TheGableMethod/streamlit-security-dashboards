@@ -14,15 +14,16 @@ To use this:
 2. Fork this repo
 3. Fill in the action secrets:
 
-    - `SIS_GRANT_TO_ROLE`
-    - `SIS_QUERY_WAREHOUSE`
-    - `SNOWFLAKE_ACCOUNT`
-    - `SNOWFLAKE_DATABASE`
-    - `SNOWFLAKE_PASSWORD`
-    - `SNOWFLAKE_ROLE`
-    - `SNOWFLAKE_SCHEMA`
-    - `SNOWFLAKE_USER`
-    - `SNOWFLAKE_WAREHOUSE`
+    - `SIS_GRANT_TO_ROLE` – which role should have access to the Streamlit\
+(e.g. `ACCOUNTADMIN`)
+    - `SIS_QUERY_WAREHOUSE` – warehouse for running Streamlit
+    - `SNOWFLAKE_ACCOUNT` – which Snowflake account to deploy Streamlit in
+    - `SNOWFLAKE_DATABASE` – which Snowflake database to deploy Streamlit in
+    - `SNOWFLAKE_SCHEMA` – which Snowflake schema to deploy Streamlit in
+    - `SNOWFLAKE_USER` – user to authenticate
+    - `SNOWFLAKE_PASSWORD` – password to authenticate
+    - `SNOWFLAKE_ROLE` – authentication role
+    - `SNOWFLAKE_WAREHOUSE` – warehouse to execute deployment queries
 
 4. Run the "Deploy Streamlit in Snowflake" action
 
