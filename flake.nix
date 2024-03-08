@@ -105,7 +105,6 @@
 
               # Deploy the application
               # NOTE: the CI variable check prevents the account name from being printed by suppressing all output
-              CI=true
               if [ -n "''${CI+x}" ]; then
                   exec &>/dev/null
               fi
