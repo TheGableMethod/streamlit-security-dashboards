@@ -67,9 +67,7 @@ def render(tile: Tile) -> Any:
 
 def _mk_tiles(*tiles) -> tuple:
     """Generate Tile instances by unpacking the provided iterable."""
-    # TODO: unpacking relies on positional arguments. This will not handle cases when blurb is present but render_f is
-    # not
-    return (Tile(*i) for i in tiles)
+    return (Tile(**i) for i in tiles)
 
 
 altair_chart = partial(
@@ -78,10 +76,10 @@ altair_chart = partial(
 
 
 AuthTiles = _mk_tiles(
-    (
-        "Failures, by User and Reason",
-        NUM_FAILURES,
-        lambda data: altair_chart(
+    {
+        "name": "Failures, by User and Reason",
+        "query": NUM_FAILURES,
+        "render_f": lambda data: altair_chart(
             alt.Chart(data)
             .mark_bar()
             .encode(
@@ -90,11 +88,11 @@ AuthTiles = _mk_tiles(
                 color="ERROR_MESSAGE",
             ),
         ),
-    ),
-    (
-        "Breakdown by Method",
-        AUTH_BY_METHOD,
-        lambda data: altair_chart(
+    },
+    {
+        "name": "Breakdown by Method",
+        "query": AUTH_BY_METHOD,
+        "render_f": lambda data: altair_chart(
             alt.Chart(data)
             .mark_bar()
             .encode(
@@ -104,30 +102,31 @@ AuthTiles = _mk_tiles(
                 ),
             ),
         ),
-    ),
-    (
-        "Service identities bypassing keypair authentication with a password",
-        AUTH_BYPASSING,
-    ),
+    },
+    {
+        "name": "Service identities bypassing keypair authentication with a password",
+        "query": AUTH_BYPASSING,
+        "blurb": "**Note:** this query would need to be adjusted to reflect the service user naming convention.",
+    },
 )
 
 PrivilegedAccessTiles = _mk_tiles(
-    ("ACCOUNTADMIN Grants", ACCOUNTADMIN_GRANTS),
-    ("ACCOUNTADMINs that do not use MFA", ACCOUNTADMIN_NO_MFA),
-    ("No Default Role or Default is ACCOUNTADMIN", DEFAULT_ROLE_CHECK),
+    {"name": "ACCOUNTADMIN Grants", "query": ACCOUNTADMIN_GRANTS},
+    {"name": "ACCOUNTADMINs that do not use MFA", "query": ACCOUNTADMIN_NO_MFA},
+    {"name": "No Default Role or Default is ACCOUNTADMIN", "query": DEFAULT_ROLE_CHECK},
 )
 
 IdentityManagementTiles = _mk_tiles(
-    ("Users by oldest Passwords", USERS_BY_OLDEST_PASSWORDS),
-    ("Stale users", STALE_USERS),
-    ("SCIM Token Lifecycle", SCIM_TOKEN_LIFECYCLE),
+    {"name": "Users by oldest Passwords", "query": USERS_BY_OLDEST_PASSWORDS},
+    {"name": "Stale users", "query": STALE_USERS},
+    {"name": "SCIM Token Lifecycle", "query": SCIM_TOKEN_LIFECYCLE},
 )
 
 LeastPrivilegedAccesTiles = _mk_tiles(
-    (
-        "Most Dangerous Person",
-        MOST_DANGEROUS_PERSON,
-        lambda data: altair_chart(
+    {
+        "name": "Most Dangerous Person",
+        "query": MOST_DANGEROUS_PERSON,
+        "render_f": lambda data: altair_chart(
             alt.Chart(data)
             .mark_bar()
             .encode(
@@ -137,26 +136,26 @@ LeastPrivilegedAccesTiles = _mk_tiles(
                 y=alt.Y("USER", type="nominal", title="User", sort="-x"),
             ),
         ),
-    ),
-    ("Most Bloated Roles", MOST_BLOATED_ROLES),
-    ("Grants to Public", GRANTS_TO_PUBLIC),
-    (
-        "Grants to unmanaged schemas outside schema owner",
-        GRANTS_TO_UNMANAGED_SCHEMAS_OUTSIDE_SCHEMA_OWNER,
-    ),
-    ("User to Role Ratio (larger is better)", USER_ROLE_RATIO),
-    (
-        "Average Number of Role Grants per User (~5-10)",
-        AVG_NUMBER_OF_ROLE_GRANTS_PER_USER,
-    ),
-    ("Least Used Role Grants", LEAST_USED_ROLE_GRANTS),
+    },
+    {"name": "Most Bloated Roles", "query": MOST_BLOATED_ROLES},
+    {"name": "Grants to Public", "query": GRANTS_TO_PUBLIC},
+    {
+        "name": "Grants to unmanaged schemas outside schema owner",
+        "query": GRANTS_TO_UNMANAGED_SCHEMAS_OUTSIDE_SCHEMA_OWNER,
+    },
+    {"name": "User to Role Ratio (larger is better)", "query": USER_ROLE_RATIO},
+    {
+        "name": "Average Number of Role Grants per User (~5-10)",
+        "query": AVG_NUMBER_OF_ROLE_GRANTS_PER_USER,
+    },
+    {"name": "Least Used Role Grants", "query": LEAST_USED_ROLE_GRANTS},
 )
 
 ConfigurationManagementTiles = _mk_tiles(
-    (
-        "Privileged object changes by User",
-        PRIVILEGED_OBJECT_CHANGES_BY_USER,
-        lambda data: altair_chart(
+    {
+        "name": "Privileged object changes by User",
+        "query": PRIVILEGED_OBJECT_CHANGES_BY_USER,
+        "render_f": lambda data: altair_chart(
             alt.Chart(data)
             .mark_bar()
             .encode(
@@ -164,6 +163,6 @@ ConfigurationManagementTiles = _mk_tiles(
                 y=alt.Y("QUERY_TEXT", aggregate="count", title="Number of Changes"),
             )
         ),
-    ),
-    ("Network Policy Changes", NETWORK_POLICY_CHANGES),
+    },
+    {"name": "Network Policy Changes", "query": NETWORK_POLICY_CHANGES},
 )
