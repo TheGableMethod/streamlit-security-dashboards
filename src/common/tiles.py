@@ -41,6 +41,8 @@ class Tile(NamedTuple):
     query: str
     # NOTE: this might not work if pushed into a Streamlit container
     render_f: Callable = partial(st.dataframe, use_container_width=True)
+    # NOTE: This field should be last; otherwise the _mk_tiles function will need to handle the empty blurb
+    blurb: str = ""
 
     def render(self):
         """Produce a Tile's representation on the page."""
@@ -50,6 +52,13 @@ class Tile(NamedTuple):
             data = session.sql(self.query).to_pandas()
         self.render_f(data)
 
+        with st.expander(label="More details"):
+            st.markdown(self.blurb)
+
+            st.markdown("**Query:**")
+
+            st.code(self.query)
+
 
 def render(tile: Tile) -> Any:
     """Call Tile.render in a functional way."""
@@ -58,6 +67,8 @@ def render(tile: Tile) -> Any:
 
 def _mk_tiles(*tiles) -> tuple:
     """Generate Tile instances by unpacking the provided iterable."""
+    # TODO: unpacking relies on positional arguments. This will not handle cases when blurb is present but render_f is
+    # not
     return (Tile(*i) for i in tiles)
 
 
