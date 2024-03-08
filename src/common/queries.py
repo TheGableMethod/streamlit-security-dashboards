@@ -316,3 +316,68 @@ select user_name || ' made the following Network Policy change on ' || end_time 
        and query_type != 'SELECT' and query_type != 'UNKNOWN'
    order by end_time desc;
 """
+
+DEFAULT_ROLE_CHECK = f"""
+select role, grantee_name, default_role
+from {_SCHEMA}."GRANTS_TO_USERS" join "SNOWFLAKE"."ACCOUNT_USAGE"."USERS"
+on users.name = grants_to_users.grantee_name
+where role = 'ACCOUNTADMIN'
+and grants_to_users.deleted_on is null
+and users.deleted_on is null
+order by grantee_name;
+"""
+
+GRANTS_TO_PUBLIC = f"""
+select user_name, role_name, query_text, end_time
+from {_SCHEMA}.query_history where execution_status = 'SUCCESS'
+and query_type = 'GRANT' and
+query_text ilike '%to%public%'
+order by end_time desc
+"""
+
+GRANTS_TO_UNMANAGED_SCHEMAS_OUTSIDE_SCHEMA_OWNER = f"""
+select table_catalog,  
+        table_schema,  
+        schema_owner,        
+        privilege,  
+        granted_by,  
+        granted_on,  
+        name,  
+        granted_to,  
+        grantee_name,  
+        grant_option 
+   from {_SCHEMA}.grants_to_roles gtr 
+   join {_SCHEMA}.schemata s 
+     on s.catalog_name = gtr.table_catalog 
+    and s.schema_name = gtr.table_schema 
+  where deleted_on is null 
+    and deleted is null 
+    and granted_by not in ('ACCOUNTADMIN', 'SECURITYADMIN') //add other roles with MANAGE GRANTS if applicable 
+    and is_managed_access = 'NO' 
+    and schema_owner <> granted_by 
+  order by  
+        table_catalog,  
+        table_schema;
+"""
+
+USER_ROLE_RATIO = f"""
+select 
+round(count(*) / (select count(*) from {_SCHEMA}.roles),1)
+from {_SCHEMA}.users;
+"""
+
+AVG_NUMBER_OF_ROLE_GRANTS_PER_USER = f"""
+with role_grants_per_user (user, role_count) as (
+select grantee_name as user, count(*) role_count from {_SCHEMA}.grants_to_users where deleted_on is null group by grantee_name order by role_count desc)
+select round(avg(role_count),1) from role_grants_per_user;
+"""
+
+
+LEAST_USED_ROLE_GRANTS = f"""
+with least_used_roles (user_name, role_name, last_used, times_used) as
+(select user_name, role_name, max(end_time), count(*) from {_SCHEMA}.query_history group by user_name, role_name order by user_name, role_name)
+select grantee_name, role, nvl(last_used, (select min(start_time) from {_SCHEMA}.query_history)) last_used, nvl(times_used, 0) times_used, datediff(day, created_on, current_timestamp()) || ' days ago' age
+from {_SCHEMA}.grants_to_users
+left join least_used_roles on user_name = grantee_name and role = role_name
+where deleted_on is null order by last_used, times_used, age desc;
+"""

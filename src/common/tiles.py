@@ -4,7 +4,7 @@ Tiles are self-contained objects that combine the query to fetch the data with t
 """
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple
 
 import altair as alt
 import streamlit as st
@@ -15,6 +15,11 @@ from .queries import (
     ACCOUNTADMIN_NO_MFA,
     AUTH_BY_METHOD,
     AUTH_BYPASSING,
+    AVG_NUMBER_OF_ROLE_GRANTS_PER_USER,
+    DEFAULT_ROLE_CHECK,
+    GRANTS_TO_PUBLIC,
+    GRANTS_TO_UNMANAGED_SCHEMAS_OUTSIDE_SCHEMA_OWNER,
+    LEAST_USED_ROLE_GRANTS,
     MOST_BLOATED_ROLES,
     MOST_DANGEROUS_PERSON,
     NETWORK_POLICY_CHANGES,
@@ -22,6 +27,7 @@ from .queries import (
     PRIVILEGED_OBJECT_CHANGES_BY_USER,
     SCIM_TOKEN_LIFECYCLE,
     STALE_USERS,
+    USER_ROLE_RATIO,
     USERS_BY_OLDEST_PASSWORDS,
 )
 
@@ -50,98 +56,103 @@ def render(tile: Tile) -> Any:
     return tile.render()
 
 
+def _mk_tiles(*tiles) -> tuple:
+    """Generate Tile instances by unpacking the provided iterable."""
+    return (Tile(*i) for i in tiles)
+
+
 altair_chart = partial(
     st.altair_chart, use_container_width=True
 )  # NOTE: theme="streamlit" is default
 
 
-AuthFailures = Tile(
-    "Failures, by User and Reason",
-    NUM_FAILURES,
-    lambda data: altair_chart(
-        alt.Chart(data)
-        .mark_bar()
-        .encode(
-            x=alt.X("USER_NAME", type="nominal", sort="-y", title="User"),
-            y=alt.Y("NUM_OF_FAILURES", aggregate="sum", title="Login failures"),
-            color="ERROR_MESSAGE",
+AuthTiles = _mk_tiles(
+    (
+        "Failures, by User and Reason",
+        NUM_FAILURES,
+        lambda data: altair_chart(
+            alt.Chart(data)
+            .mark_bar()
+            .encode(
+                x=alt.X("USER_NAME", type="nominal", sort="-y", title="User"),
+                y=alt.Y("NUM_OF_FAILURES", aggregate="sum", title="Login failures"),
+                color="ERROR_MESSAGE",
+            ),
         ),
     ),
-)
-
-AuthByMethod = Tile(
-    "Breakdown by Method",
-    AUTH_BY_METHOD,
-    lambda data: altair_chart(
-        alt.Chart(data)
-        .mark_bar()
-        .encode(
-            x=alt.X("COUNT(*)", type="quantitative", title="Event Count"),
-            y=alt.Y("AUTHENTICATION_METHOD", type="nominal", title="Method", sort="-x"),
+    (
+        "Breakdown by Method",
+        AUTH_BY_METHOD,
+        lambda data: altair_chart(
+            alt.Chart(data)
+            .mark_bar()
+            .encode(
+                x=alt.X("COUNT(*)", type="quantitative", title="Event Count"),
+                y=alt.Y(
+                    "AUTHENTICATION_METHOD", type="nominal", title="Method", sort="-x"
+                ),
+            ),
         ),
     ),
+    (
+        "Service identities bypassing keypair authentication with a password",
+        AUTH_BYPASSING,
+    ),
 )
 
-# TODO: maybe allow customizable filter?
-AuthBypassing = Tile(
-    "Service identities bypassing keypair authentication with a password",
-    AUTH_BYPASSING,
+PrivilegedAccessTiles = _mk_tiles(
+    ("ACCOUNTADMIN Grants", ACCOUNTADMIN_GRANTS),
+    ("ACCOUNTADMINs that do not use MFA", ACCOUNTADMIN_NO_MFA),
+    ("No Default Role or Default is ACCOUNTADMIN", DEFAULT_ROLE_CHECK),
 )
 
-AuthTiles = (AuthFailures, AuthByMethod, AuthBypassing)
-
-PrivilegedAccessAccountAdminGrants = Tile("ACCOUNTADMIN Grants", ACCOUNTADMIN_GRANTS)
-
-PrivilegedAccessNoMfa = Tile("ACCOUNTADMINs that do not use MFA", ACCOUNTADMIN_NO_MFA)
-
-PrivilegedAccessTiles = (PrivilegedAccessAccountAdminGrants, PrivilegedAccessNoMfa)
-
-IdentityUsersByOldestPasswords = Tile(
-    "Users by oldest Passwords", USERS_BY_OLDEST_PASSWORDS
+IdentityManagementTiles = _mk_tiles(
+    ("Users by oldest Passwords", USERS_BY_OLDEST_PASSWORDS),
+    ("Stale users", STALE_USERS),
+    ("SCIM Token Lifecycle", SCIM_TOKEN_LIFECYCLE),
 )
 
-StaleUsers = Tile("Stale users", STALE_USERS)
-
-SCIMTokenLifecycle = Tile("SCIM Token Lifecycle", SCIM_TOKEN_LIFECYCLE)
-
-IdentityManagementTiles = (
-    IdentityUsersByOldestPasswords,
-    StaleUsers,
-    SCIMTokenLifecycle,
-)
-
-MostDangerousPersonTile = Tile(
-    "Most Dangerous Person",
-    MOST_DANGEROUS_PERSON,
-    lambda data: altair_chart(
-        alt.Chart(data)
-        .mark_bar()
-        .encode(
-            x=alt.X("NUM_OF_PRIVS", type="quantitative", title="Number of privileges"),
-            y=alt.Y("USER", type="nominal", title="User", sort="-x"),
+LeastPrivilegedAccesTiles = _mk_tiles(
+    (
+        "Most Dangerous Person",
+        MOST_DANGEROUS_PERSON,
+        lambda data: altair_chart(
+            alt.Chart(data)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    "NUM_OF_PRIVS", type="quantitative", title="Number of privileges"
+                ),
+                y=alt.Y("USER", type="nominal", title="User", sort="-x"),
+            ),
         ),
     ),
-    # TODO
-    # grantee_name as user,
-    #     count(a.role) num_of_roles,
-    #     sum(num_of_privs) num_of_privs
-)
-
-MostBloatedRoles = Tile("Most Bloated Roles", MOST_BLOATED_ROLES)
-LeastPrivilegedAccesTiles = (MostDangerousPersonTile, MostBloatedRoles)
-
-PrivilegedObjectChangesByUser = Tile(
-    "Privileged object changes by User",
-    PRIVILEGED_OBJECT_CHANGES_BY_USER,
-    lambda data: altair_chart(
-        alt.Chart(data)
-        .mark_bar()
-        .encode(
-            x=alt.X("USER_NAME", type="nominal", sort="-y", title="User"),
-            y=alt.Y("QUERY_TEXT", aggregate="count", title="Number of Changes"),
-        )
+    ("Most Bloated Roles", MOST_BLOATED_ROLES),
+    ("Grants to Public", GRANTS_TO_PUBLIC),
+    (
+        "Grants to unmanaged schemas outside schema owner",
+        GRANTS_TO_UNMANAGED_SCHEMAS_OUTSIDE_SCHEMA_OWNER,
     ),
+    ("User to Role Ratio (larger is better)", USER_ROLE_RATIO),
+    (
+        "Average Number of Role Grants per User (~5-10)",
+        AVG_NUMBER_OF_ROLE_GRANTS_PER_USER,
+    ),
+    ("Least Used Role Grants", LEAST_USED_ROLE_GRANTS),
 )
-NetworkPolicyChanges = Tile("Network Policy Changes", NETWORK_POLICY_CHANGES)
 
-ConfigurationManagementTiles = (PrivilegedObjectChangesByUser, NetworkPolicyChanges)
+ConfigurationManagementTiles = _mk_tiles(
+    (
+        "Privileged object changes by User",
+        PRIVILEGED_OBJECT_CHANGES_BY_USER,
+        lambda data: altair_chart(
+            alt.Chart(data)
+            .mark_bar()
+            .encode(
+                x=alt.X("USER_NAME", type="nominal", sort="-y", title="User"),
+                y=alt.Y("QUERY_TEXT", aggregate="count", title="Number of Changes"),
+            )
+        ),
+    ),
+    ("Network Policy Changes", NETWORK_POLICY_CHANGES),
+)
