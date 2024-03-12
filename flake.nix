@@ -117,8 +117,8 @@
                 EOF
               '';
             };
-            deploy-native-app-in-own-account.program = pkgs.writeShellApplication {
-              name = "deploy-native-app-in-own-account";
+            tear-down-and-deploy-native-app-in-own-account.program = pkgs.writeShellApplication {
+              name = "tear-down-and-deploy-native-app-in-own-account";
               runtimeInputs = [ snowCli pkgs.yq ];
               text = ''
                 function exit_trap(){
@@ -214,8 +214,8 @@
               }
               {
                 help = "Deploy native app to the test account";
-                name = "deploy-native-app-in-own-account";
-                command = "nix run .#deploy-native-app-in-own-account";
+                name = "tear-down-and-deploy-native-app-in-own-account";
+                command = "nix run .#tear-down-and-deploy-native-app-in-own-account";
               }
             ];
             packages = builtins.attrValues { inherit (pkgs) jc jq; } ++ [ snowCli ];
