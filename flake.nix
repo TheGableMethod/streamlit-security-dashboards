@@ -148,9 +148,11 @@
                 snow app teardown
                 snow app run
 
-                # Grant the imported privileges automatically
                 cat <<EOF | snow sql --stdin
-                GRANT IMPORTED PRIVILEGES ON DATABASE IDENTIFIER('"SNOWFLAKE"') TO APPLICATION IDENTIFIER('"''${APP_NAME}"');
+                -- Grant access to SNOWFLAKE database to the app. Since running as an unprivileged role -- need a EXECUTE AS OWNER sproc
+                CALL srv.sentry_na_deploy.SUDO_GRANT_IMPORTED_PRIVILEGES('SENTRY');
+                -- Share the application with a specified role
+                GRANT APPLICATION ROLE ''${APP_NAME}.app_public TO ROLE $NA_GRANT_TO_ROLE;
                 EOF
               '';
             };
