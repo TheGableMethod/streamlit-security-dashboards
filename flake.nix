@@ -129,13 +129,9 @@
 
                 PRJ_ROOT=$(git rev-parse --show-toplevel)
 
-                # TARGET="$PRJ_ROOT/target"
-
                 pushd "$PRJ_ROOT" # cd to project root directory
 
                 pushd deployment_models/native-app
-
-                # TODO: handle $CI here
 
                 # Yq is like JQ but for yaml files
                 APP_NAME=$(yq --raw-output '."native_app"."application"."name" | ascii_upcase' ./snowflake.yml)
