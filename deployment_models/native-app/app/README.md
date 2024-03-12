@@ -1,16 +1,12 @@
-## Welcome to your First Snowflake Native App
+## Welcome to Sentry -- Snowflake security dashboards as an app
 
-In this Snowflake Native App, you will be able to explore some basic concepts
-such as application role, versioned schemas and creating procedures and
-functions within a setup script.
+This application contains the security dashboards from the [corresponding
+quickstart][1].
 
-For more information about a Snowflake Native App, please read the [official
-Snowflake documentation][1]
-which goes in depth about many additional functionalities of this framework.
+Source code is available [here][2].
 
-## Using the application after installation
+To get started, grant the privileges on SNOWFLAKE DB to the application and
+open the streamlit tab.
 
-To interact with the application after it has successfully installed in your
-account, switch to the application owner role first.
-
-[1]: https://docs.snowflake.com/en/developer-guide/native-apps/native-apps-about
+[1]: https://quickstarts.snowflake.com/guide/security_dashboards_for_snowflake/index.html
+[2]: https://github.com/sfc-gh-vtimofeenko/streamlit-security-dashboards
