@@ -76,45 +76,84 @@
               ) $@'';
         in
         {
-          apps.deploy-streamlit-in-snowflake.program = pkgs.writeShellApplication {
-            name = "deploy-streamlit-in-snowflake";
-            runtimeInputs = [ snowCli ];
-            text = ''
-              function exit_trap(){
-                popd
-                popd
-              }
-              trap exit_trap EXIT # go back to original dir regardless of the exit codes
+          apps = {
+            deploy-streamlit-in-snowflake.program = pkgs.writeShellApplication {
+              name = "deploy-streamlit-in-snowflake";
+              runtimeInputs = [ snowCli ];
+              text = ''
+                function exit_trap(){
+                  popd
+                  popd
+                }
+                trap exit_trap EXIT # go back to original dir regardless of the exit codes
 
-              PRJ_ROOT=$(git rev-parse --show-toplevel)
+                PRJ_ROOT=$(git rev-parse --show-toplevel)
 
-              TARGET="$PRJ_ROOT/target"
+                TARGET="$PRJ_ROOT/target"
 
-              pushd "$PRJ_ROOT" # cd to project root directory
+                pushd "$PRJ_ROOT" # cd to project root directory
 
-              rm -rf "$TARGET"
-              cp -rf src "$TARGET"
-              pushd "$TARGET"/
+                rm -rf "$TARGET"
+                cp -rf src "$TARGET"
+                pushd "$TARGET"/
 
-              # Create deploy-only config for the query warehouse
-              cat >snowflake.local.yml <<EOF
-              definition_version: 1
-              streamlit:
-                query_warehouse: $SIS_QUERY_WAREHOUSE
-              EOF
+                # Create deploy-only config for the query warehouse
+                cat >snowflake.local.yml <<EOF
+                definition_version: 1
+                streamlit:
+                  query_warehouse: $SIS_QUERY_WAREHOUSE
+                EOF
 
-              # Deploy the application
-              # NOTE: the CI variable check prevents the account name from being printed by suppressing all output
-              if [ -n "''${CI+x}" ]; then
-                  exec &>/dev/null
-              fi
-              snow streamlit deploy --replace
+                # Deploy the application
+                # NOTE: the CI variable check prevents the account name from being printed by suppressing all output
+                if [ -n "''${CI+x}" ]; then
+                    exec &>/dev/null
+                fi
+                snow streamlit deploy --replace
 
-              # Grant the usage on the created Streamlit to the designated admin role
-              cat <<EOF | snow sql -i
-              GRANT USAGE ON STREAMLIT $SNOWFLAKE_DATABASE.$SNOWFLAKE_SCHEMA.SENTRY TO ROLE $SIS_GRANT_TO_ROLE;
-              EOF
-            '';
+                # Grant the usage on the created Streamlit to the designated admin role
+                cat <<EOF | snow sql -i
+                GRANT USAGE ON STREAMLIT $SNOWFLAKE_DATABASE.$SNOWFLAKE_SCHEMA.SENTRY TO ROLE $SIS_GRANT_TO_ROLE;
+                EOF
+              '';
+            };
+            deploy-native-app-in-own-account.program = pkgs.writeShellApplication {
+              name = "deploy-native-app-in-own-account";
+              runtimeInputs = [ snowCli pkgs.yq ];
+              text = ''
+                function exit_trap(){
+                  popd
+                  popd
+                }
+                trap exit_trap EXIT # go back to original dir regardless of the exit codes
+
+                PRJ_ROOT=$(git rev-parse --show-toplevel)
+
+                # TARGET="$PRJ_ROOT/target"
+
+                pushd "$PRJ_ROOT" # cd to project root directory
+
+                pushd deployment_models/native-app
+
+                # TODO: handle $CI here
+
+                # Yq is like JQ but for yaml files
+                APP_NAME=$(yq --raw-output '."native_app"."application"."name" | ascii_upcase' ./snowflake.yml)
+
+                # NOTE: the CI variable check prevents the account name from being printed by suppressing all output
+                if [ -n "''${CI+x}" ]; then
+                    exec &>/dev/null
+                fi
+
+                snow app teardown
+                snow app run
+
+                # Grant the imported privileges automatically
+                cat <<EOF | snow sql --stdin
+                GRANT IMPORTED PRIVILEGES ON DATABASE IDENTIFIER('"SNOWFLAKE"') TO APPLICATION IDENTIFIER('"''${APP_NAME}"');
+                EOF
+              '';
+            };
           };
 
           # Development configuration
@@ -172,6 +211,11 @@
                 help = "Deploy Streamlit to the test account";
                 name = "deploy-streamlit-in-snowflake";
                 command = "nix run .#deploy-streamlit-in-snowflake";
+              }
+              {
+                help = "Deploy native app to the test account";
+                name = "deploy-native-app-in-own-account";
+                command = "nix run .#deploy-native-app-in-own-account";
               }
             ];
             packages = builtins.attrValues { inherit (pkgs) jc jq; } ++ [ snowCli ];
