@@ -15,7 +15,7 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
       # Actual deployment action
-      - name: "Deploy Streamlit in Snowflake"
+      - name: "Tear down and create the application"
         # Effectively runs a wrapper around a tiny build script + snowcli to deploy the application
         # For the wrapper source, see flake.nix
         run: nix run .#tear-down-and-deploy-native-app-in-own-account
