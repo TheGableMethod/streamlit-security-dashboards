@@ -1,5 +1,4 @@
 name: "Tear down and create the application"
-description: "NOTE: Tears the application down destroying previous installation"
 on:
   workflow_dispatch: # Run only manually
 
