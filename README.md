@@ -27,8 +27,43 @@ To use this:
 
 4. Run the "Deploy Streamlit in Snowflake" action
 
+## Streamlit in local docker container
+
+1. Clone this repository and change current directory to its root
+2. Build and run the docker image:
+
+    ```shell
+    $ docker build . -t sentry:latest -f deployment_models/local-docker/Dockerfile
+    ...
+    naming to docker.io/library/sentry:latest
+    $ docker run --rm --mount type=bind,source=$(pwd)/.streamlit,target=/app/.streamlit,readonly --publish-all sentry:latest
+    ...
+      You can now view your Streamlit app in your browser.
+    ...
+    ```
+
+    Replace `$(pwd)/.streamlit` with a path to the directory containing
+    [Streamlit secrets toml file][3].
+
+    `--publish-all` will assign a random port to the container; you can use
+    `docker ps` to determine which port is forwarded to `8501` inside the
+    container.
+
+3. (if needed) find out the port that Docker assigned to the container using
+   `docker ps`:
+
+   ```shell
+   $ docker ps --format "{{.Image}}\t{{.Ports}}"
+     sentry:latest	0.0.0.0:55000->8501/tcp
+   ```
+
+4. Open `http://localhost:55000`
+
 [1]:
 https://quickstarts.snowflake.com/guide/security_dashboards_for_snowflake/index.html
 
 [2]:
 ./.github/workflows/deploy-streamlit-in-snowflake.yml
+
+[3]:
+https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/secrets-management
