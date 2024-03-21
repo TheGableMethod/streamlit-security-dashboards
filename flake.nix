@@ -152,6 +152,8 @@
                 EOF
               '';
             };
+
+            build-and-run-in-local-docker = { type = "app"; program = import ./deployment_models/local-docker/app.nix { inherit (pkgs) writeShellApplication; }; };
           };
 
           # Development configuration
@@ -214,6 +216,11 @@
                 help = "Deploy native app to the test account";
                 name = "tear-down-and-deploy-native-app-in-own-account";
                 command = "nix run .#tear-down-and-deploy-native-app-in-own-account";
+              }
+              {
+                help = "Build and run in local docker";
+                name = "build-and-run-in-local-docker";
+                command = "nix run .#build-and-run-in-local-docker";
               }
             ];
             packages = builtins.attrValues { inherit (pkgs) jc jq; } ++ [ snowCli ];
